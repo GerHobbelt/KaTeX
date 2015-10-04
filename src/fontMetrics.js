@@ -125,15 +125,25 @@ var metricMap = require("./fontMetricsData");
  * This function is a convenience function for looking up information in the
  * metricMap table. It takes a character as a string, and a style
  */
-var getCharacterMetrics = function(character, style) {
+var getCharacterMetrics = function(character, style, includeWidth) {
     var metrics = metricMap[style][character.charCodeAt(0)];
     if (metrics) {
-        return {
-            depth: metrics[0],
-            height: metrics[1],
-            italic: metrics[2],
-            skew: metrics[3]
-        };
+        if (includeWidth) {
+            return {
+                depth: metrics[0],
+                height: metrics[1],
+                italic: metrics[2],
+                skew: metrics[3],
+                width: metrics[4]
+            };
+        } else {
+            return {
+                depth: metrics[0],
+                height: metrics[1],
+                italic: metrics[2],
+                skew: metrics[3]
+            };
+        }
     }
 };
 

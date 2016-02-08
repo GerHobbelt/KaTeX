@@ -618,3 +618,10 @@ for (i = 0; i < letters.length; i++) {
     defineSymbol(math, main, mathord, ch, ch);
     defineSymbol(text, main, textord, ch, ch);
 }
+
+// All of these are textords in text mode
+var cyrillicLetters = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";// eslint-disable-line max-len
+for (i = 0; i < cyrillicLetters.length; i++) {
+    ch = cyrillicLetters.charAt(i);
+    defineSymbol(text, main, textord, ch, ch);
+}

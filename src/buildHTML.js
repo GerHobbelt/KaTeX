@@ -51,6 +51,7 @@ var groupToType = {
     op: "mop",
     katex: "mord",
     overline: "mord",
+    underline: "mord",
     rule: "mord",
     leftright: "minner",
     sqrt: "mord",
@@ -928,6 +929,32 @@ groupTypes.overline = function(group, options, prev) {
     return makeSpan(["overline", "mord"], [vlist], options.getColor());
 };
 
+groupTypes.underline = function(group, options, prev) {
+    // Underlines are handled in the TeXbook pg 443, Rule 10.
+
+    // Build the inner group.
+    var innerGroup = buildGroup(group.value.body, options);
+
+    var ruleWidth = fontMetrics.metrics.defaultRuleThickness /
+        options.style.sizeMultiplier;
+
+    // Create the line above the body
+    var line = makeSpan(
+        [options.style.reset(), Style.TEXT.cls(), "underline-line"]);
+    line.height = ruleWidth;
+    line.maxFontSize = 1.0;
+
+    // Generate the vlist, with the appropriate kerns
+    var vlist = buildCommon.makeVList([
+        {type: "kern", size: ruleWidth},
+        {type: "elem", elem: line},
+        {type: "kern", size: 3 * ruleWidth},
+        {type: "elem", elem: innerGroup},
+    ], "top", innerGroup.height, options);
+
+    return makeSpan(["underline", "mord"], [vlist], options.getColor());
+};
+
 groupTypes.sqrt = function(group, options, prev) {
     // Square roots are handled in the TeXbook pg. 443, Rule 11.
 
@@ -1174,6 +1201,25 @@ groupTypes.rule = function(group, options, prev) {
     rule.width = width;
     rule.height = height + shift;
     rule.depth = -shift;
+
+    return rule;
+};
+
+groupTypes.kern = function(group, options, prev) {
+    // Make an empty span for the rule
+    var rule = makeSpan(["mord", "rule"], [], options.getColor());
+
+    var dimension = 0;
+    if (group.value.dimension) {
+        dimension = group.value.dimension.number;
+        if (group.value.dimension.unit === "ex") {
+            dimension *= fontMetrics.metrics.xHeight;
+        }
+    }
+
+    dimension /= options.style.sizeMultiplier;
+
+    rule.style.marginLeft = dimension + "em";
 
     return rule;
 };

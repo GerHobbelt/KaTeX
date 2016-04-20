@@ -170,6 +170,17 @@ defineFunction("\\overline", {
     };
 });
 
+// An underline
+defineFunction("\\underline", {
+    numArgs: 1,
+}, function(context, args) {
+    var body = args[0];
+    return {
+        type: "underline",
+        body: body,
+    };
+});
+
 // A box of the width and height
 defineFunction("\\rule", {
     numArgs: 2,
@@ -184,6 +195,16 @@ defineFunction("\\rule", {
         shift: shift && shift.value,
         width: width.value,
         height: height.value,
+    };
+});
+
+defineFunction("\\kern", {
+    numArgs: 1,
+    argTypes: ["size"],
+}, function(context, args) {
+    return {
+        type: "kern",
+        dimension: args[0].value,
     };
 });
 

@@ -1,6 +1,6 @@
 {
   "name": "katex",
-  "version": "0.6.0-pre",
+  "version": "0.7.0-pre",
   "description": "Fast math typesetting for the web.",
   "main": "katex.js",
   "repository": {
@@ -10,7 +10,8 @@
   "files": [
     "katex.js",
     "cli.js",
-    "src/"
+    "src/",
+    "dist/"
   ],
   "license": "MIT",
   "devDependencies": {
@@ -31,7 +32,8 @@
   },
   "bin": "cli.js",
   "scripts": {
-    "test": "make lint test"
+    "test": "make lint test",
+    "prepublish": "make dist"
   },
   "dependencies": {
     "match-at": "^0.1.0"

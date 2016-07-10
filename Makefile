@@ -17,19 +17,19 @@ setup:
 	npm install
 
 lint: katex.js server.js cli.js $(wildcard src/*.js) $(wildcard test/*.js) $(wildcard contrib/*/*.js) $(wildcard dockers/*/*.js)
-	./node_modules/.bin/jshint $^
+	sh ./node_modules/.bin/jshint $^
 
 build/katex.js: katex.js $(wildcard src/*.js)
 	$(BROWSERIFY) $< --standalone katex > $@
 
 build/katex.min.js: build/katex.js
-	$(UGLIFYJS) < $< > $@
+	sh $(UGLIFYJS) < $< > $@
 
 build/katex.less.css: static/katex.less $(wildcard static/*.less)
-	./node_modules/.bin/lessc $< $@
+	sh ./node_modules/.bin/lessc $< $@
 
 build/katex.min.css: build/katex.less.css
-	./node_modules/.bin/cleancss -o $@ $<
+	sh ./node_modules/.bin/cleancss -o $@ $<
 
 .PHONY: build/fonts
 build/fonts:

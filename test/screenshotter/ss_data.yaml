@@ -59,6 +59,7 @@ Functions: \sin\cos\tan\ln\log
 GreekLetters: \alpha\beta\gamma\omega
 GreekUnicode: \frac{αβγδεϵζηθϑικλμνξοπϖρϱςστυφϕχψω}{ΓΔΘΞΠΣΦΨΩ}
 KaTeX: \KaTeX
+Kern: \frac{a\kern{1em}b}{c}a\kern{1em}b\kern{1ex}c\kern{-0.25em}d
 Lap: ab\llap{f}cd\rlap{g}h
 LeftRight: \left( x^2 \right) \left\{ x^{x^{x^{x^x}}} \right.
 LeftRightListStyling: a+\left(x+y\right)-x
@@ -86,7 +87,7 @@ NullDelimiterInteraction: a \bigl. + 2 \quad \left. + a \right)
 OpLimits: |
     {\sin_2^2 \lim_2^2 \int_2^2 \sum_2^2}
     {\displaystyle \lim_2^2 \int_2^2 \intop_2^2 \sum_2^2}
-Overline: \overline{x}\overline{x}\overline{x^{x^{x^x}}} \blue{\overline{y}}
+OverUnderline: x\underline{x}\underline{\underline{x}}\underline{x_{x_{x_x}}}\underline{x^{x^{x^x}}}\overline{x}\overline{x}\overline{x^{x^{x^x}}} \blue{\overline{\underline{x}}\underline{\overline{x}}}
 Phantom: \dfrac{1+\phantom{x^{\blue{2}}} = x}{1+x^{\blue{2}} = x}
 PrimeSpacing: f'+f_2'+f^{f'}
 RlapBug: \frac{\rlap{x}}{2}

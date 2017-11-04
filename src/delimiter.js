@@ -23,7 +23,8 @@
 import ParseError from "./ParseError";
 import Style from "./Style";
 
-import buildCommon, { makeSpan } from "./buildCommon";
+import domTree from "./domTree";
+import buildCommon from "./buildCommon";
 import fontMetrics from "./fontMetrics";
 import symbols from "./symbols";
 import utils from "./utils";
@@ -49,7 +50,7 @@ const getMetrics = function(symbol, font) {
 const styleWrap = function(delim, toStyle, options, classes) {
     const newOptions = options.havingBaseStyle(toStyle);
 
-    const span = makeSpan(
+    const span = buildCommon.makeSpan(
         (classes || []).concat(newOptions.sizingClasses(options)),
         [delim], options);
 
@@ -102,7 +103,7 @@ const mathrmSize = function(value, size, mode, options) {
 const makeLargeDelim = function(delim, size, center, options, mode, classes) {
     const inner = mathrmSize(delim, size, mode, options);
     const span = styleWrap(
-        makeSpan(["delimsizing", "size" + size], [inner], options),
+        buildCommon.makeSpan(["delimsizing", "size" + size], [inner], options),
         Style.TEXT, options, classes);
     if (center) {
         centerSpan(span, options, Style.TEXT);
@@ -123,9 +124,9 @@ const makeInner = function(symbol, font, mode) {
         sizeClass = "delim-size4";
     }
 
-    const inner = makeSpan(
+    const inner = buildCommon.makeSpan(
         ["delimsizinginner", sizeClass],
-        [makeSpan([], [buildCommon.makeSymbol(symbol, font, mode)])]);
+        [buildCommon.makeSpan([], [buildCommon.makeSymbol(symbol, font, mode)])]);
 
     // Since this will be passed into `makeVList` in the end, wrap the element
     // in the appropriate tag that VList uses.
@@ -236,11 +237,6 @@ const makeStackedDelim = function(delim, heightTotal, center, options, mode,
         bottom = "\u23a9";
         repeat = "\u23aa";
         font = "Size4-Regular";
-    } else if (delim === "\\surd") {
-        top = "\ue001";
-        bottom = "\u23b7";
-        repeat = "\ue000";
-        font = "Size4-Regular";
     }
 
     // Get the metrics of the four sections
@@ -311,11 +307,81 @@ const makeStackedDelim = function(delim, heightTotal, center, options, mode,
 
     // Finally, build the vlist
     const newOptions = options.havingBaseStyle(Style.TEXT);
-    const inner = buildCommon.makeVList(inners, "bottom", depth, newOptions);
+    const inner = buildCommon.makeVList({
+        positionType: "bottom",
+        positionData: depth,
+        children: inners,
+    }, newOptions);
 
     return styleWrap(
-        makeSpan(["delimsizing", "mult"], [inner], newOptions),
+        buildCommon.makeSpan(["delimsizing", "mult"], [inner], newOptions),
         Style.TEXT, options, classes);
+};
+
+const sqrtSvg = function(sqrtName, height, viewBoxHeight, options) {
+    let alternate;
+    if (sqrtName === "sqrtTall") {
+        // sqrtTall is from glyph U23B7 in the font KaTeX_Size4-Regular
+        // One path edge has a variable length. It runs from the viniculumn
+        // to a point near (14 units) the bottom of the surd. The viniculum
+        // is 40 units thick. So the length of the line in question is:
+        const vertSegment = viewBoxHeight - 54;
+        alternate = `M702 0H400000v40H742v${vertSegment}l-4 4-4 4c-.667.667
+-2 1.5-4 2.5s-4.167 1.833-6.5 2.5-5.5 1-9.5 1h-12l-28-84c-16.667-52-96.667
+-294.333-240-727l-212 -643 -85 170c-4-3.333-8.333-7.667-13 -13l-13-13l77-155
+ 77-156c66 199.333 139 419.667 219 661 l218 661zM702 0H400000v40H742z`;
+    }
+    const pathNode = new domTree.pathNode(sqrtName, alternate);
+
+    // Note: 1000:1 ratio of viewBox to document em width.
+    const attributes = [["width", "400em"], ["height", height + "em"]];
+    attributes.push(["viewBox", "0 0 400000 " + viewBoxHeight]);
+    attributes.push(["preserveAspectRatio", "xMinYMin slice"]);
+    const svg =  new domTree.svgNode([pathNode], attributes);
+
+    return buildCommon.makeSpan(["hide-tail"], [svg], options);
+};
+
+const sqrtSpan = function(height, delim, options) {
+    // Create a span containing an SVG image of a sqrt symbol.
+    let span;
+    let sizeMultiplier = options.sizeMultiplier;  // default
+    let spanHeight;
+    let viewBoxHeight;
+
+    if (delim.type === "small") {
+        // Get an SVG that is derived from glyph U+221A in font KaTeX-Main.
+        viewBoxHeight = 1000;  // from font
+        const newOptions = options.havingBaseStyle(delim.style);
+        sizeMultiplier = newOptions.sizeMultiplier / options.sizeMultiplier;
+        spanHeight = 1 * sizeMultiplier;
+        span = sqrtSvg("sqrtMain", spanHeight, viewBoxHeight, options);
+        span.style.minWidth = "0.853em";
+        span.advanceWidth = 0.833 * sizeMultiplier;   // from the font.
+
+    } else if (delim.type === "large") {
+        // These SVGs come from fonts: KaTeX_Size1, _Size2, etc.
+        viewBoxHeight = 1000 * sizeToMaxHeight[delim.size];
+        spanHeight = sizeToMaxHeight[delim.size] / sizeMultiplier;
+        span = sqrtSvg("sqrtSize" + delim.size, spanHeight, viewBoxHeight, options);
+        span.style.minWidth = "1.02em";
+        span.advanceWidth = 1.0 / sizeMultiplier; // from the font
+
+    } else {
+        // Tall sqrt. In TeX, this would be stacked using multiple glyphs.
+        // We'll use a single SVG to accomplish the same thing.
+        spanHeight = height / sizeMultiplier;
+        viewBoxHeight = Math.floor(1000 * height);
+        span = sqrtSvg("sqrtTall", spanHeight, viewBoxHeight, options);
+        span.style.minWidth = "0.742em";
+        span.advanceWidth = 1.056 / sizeMultiplier;
+    }
+
+    span.height = spanHeight;
+    span.style.height = spanHeight + "em";
+    span.sizeMultiplier = sizeMultiplier;
+
+    return span;
 };
 
 // There are three kinds of delimiters, delimiters that stack when they become
@@ -488,16 +554,23 @@ const makeCustomSizedDelim = function(delim, height, center, options, mode,
     // Look through the sequence
     const delimType = traverseSequence(delim, height, sequence, options);
 
-    // Depending on the sequence element we decided on, call the appropriate
-    // function.
-    if (delimType.type === "small") {
-        return makeSmallDelim(delim, delimType.style, center, options, mode,
-                              classes);
-    } else if (delimType.type === "large") {
-        return makeLargeDelim(delim, delimType.size, center, options, mode,
-                              classes);
-    } else if (delimType.type === "stack") {
-        return makeStackedDelim(delim, height, center, options, mode, classes);
+    if (delim === "\\surd") {
+        // Get an SVG image
+        return sqrtSpan(height, delimType, options);
+    } else {
+        // Get the delimiter from font glyphs.
+        // Depending on the sequence element we decided on, call the
+        // appropriate function.
+        if (delimType.type === "small") {
+            return makeSmallDelim(delim, delimType.style, center, options,
+                                  mode, classes);
+        } else if (delimType.type === "large") {
+            return makeLargeDelim(delim, delimType.size, center, options, mode,
+                                  classes);
+        } else if (delimType.type === "stack") {
+            return makeStackedDelim(delim, height, center, options, mode,
+                                    classes);
+        }
     }
 };
 
@@ -537,7 +610,7 @@ const makeLeftRightDelim = function(delim, height, depth, options, mode,
                                 classes);
 };
 
-module.exports = {
+export default {
     sizedDelim: makeSizedDelim,
     customSizedDelim: makeCustomSizedDelim,
     leftRightDelim: makeLeftRightDelim,

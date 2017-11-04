@@ -1,5 +1,5 @@
-.PHONY: build dist lint setup copy serve clean metrics test coverage zip contrib
-build: lint build/katex.min.js build/katex.min.css contrib zip compress
+.PHONY: build dist lint setup copy serve clean metrics test coverage zip contrib flow
+build: test build/katex.min.js build/katex.min.css contrib zip compress
 
 ifeq ($(KATEX_DIST),skip)
 
@@ -14,6 +14,7 @@ dist: build
 endif
 
 NODE := node # pass NODE=nodejs on Debian without package nodejs-legacy
+NPM := npm
 NODECHK := $(shell $(NODE) ./check-node-version.js)
 ifneq ($(NODECHK),OK)
 $(error "Node not found or wrong version")
@@ -26,6 +27,7 @@ export UGLIFYJS = $(realpath ./node_modules/.bin/uglifyjs) \
 	--mangle \
 	--beautify \
 	ascii_only=true,beautify=false
+export CLEANCSS = $(realpath ./node_modules/.bin/cleancss)
 
 # The prepublish script in package.json will override the following variable,
 # setting it to the empty string and thereby avoiding an infinite recursion
@@ -35,20 +37,24 @@ $(NIS) setup: package.json
 	KATEX_DIST=skip npm install # dependencies only, don't build
 	@touch $(NIS)
 
-lint: $(NIS) katex.js server.js cli.js $(wildcard src/*.js) $(wildcard test/*.js) $(wildcard contrib/*/*.js) $(wildcard dockers/*/*.js)
-	sh ./node_modules/.bin/eslint $(filter-out %.stamp,$^)
+lint: $(NIS)
+	$(NPM) run lint
 
 build/katex.js: katex.js $(wildcard src/*.js) $(NIS)
+	mkdir -p build
 	$(BROWSERIFY) -t [ babelify ] $< --standalone katex > $@
 
 build/katex.min.js: build/katex.js
-	sh $(UGLIFYJS) < $< > $@
+	mkdir -p build
+	$(UGLIFYJS) < $< > $@
 
 build/katex.css: static/katex.less $(wildcard static/*.less) $(NIS)
-	sh ./node_modules/.bin/lessc $< $@
+	mkdir -p build
+	./node_modules/.bin/lessc $< $@
 
 build/katex.min.css: build/katex.css
-	sh ./node_modules/.bin/cleancss -o $@ $<
+	mkdir -p build
+	$(CLEANCSS) -o $@ $<
 
 .PHONY: build/fonts
 build/fonts:
@@ -73,15 +79,11 @@ build/contrib:
 	@# there's nothing in there we don't want.
 	rm -rf build/contrib/*
 	$(MAKE) -C contrib/auto-render
-
-.PHONY: build/images
-build/images:
-	rm -rf $@
-	mkdir -p build
-	cp -r static/images $@
+	$(MAKE) -C contrib/copy-tex
+	$(MAKE) -C contrib/mathtex-script-type
 
 .PHONY: build/katex
-build/katex: build/katex.js build/katex.min.js build/katex.css build/katex.min.css build/fonts build/images README.md build/contrib
+build/katex: build/katex.js build/katex.min.js build/katex.css build/katex.min.css build/fonts README.md build/contrib
 	mkdir -p build/katex
 	rm -rf build/katex/*
 	cp -r $^ build/katex
@@ -104,13 +106,16 @@ compress: build/katex.min.js build/katex.min.css
 	printf "Total:                 %6d\n" "$${TOTAL}"
 
 serve: $(NIS)
-	$(NODE) server.js
+	$(NPM) start
+
+flow: $(NIS)
+	$(NPM) run flow
 
 test: $(NIS)
-	node_modules/.bin/jest
+	$(NPM) test
 
 coverage: $(NIS)
-	node_modules/.bin/jest --coverage
+	$(NPM) run coverage
 
 PERL=perl
 PYTHON=$(shell python2 --version >/dev/null 2>&1 && echo python2 || echo python)

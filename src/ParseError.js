@@ -1,3 +1,7 @@
+// @flow
+import ParseNode from "./ParseNode";
+import {Token} from "./Token";
+
 /**
  * This is the ParseError class, which is the main error thrown by KaTeX
  * functions when something has gone wrong. This is used to distinguish internal
@@ -5,25 +9,28 @@
  *
  * If possible, a caller should provide a Token or ParseNode with information
  * about where in the source string the problem occurred.
- *
- * @param {string} message  The error message
- * @param {(Token|ParseNode)=} token  An object providing position information
  */
 class ParseError {
-    constructor(message, token) {
+    position: number | void;
+        // Error position based on passed-in Token or ParseNode.
+
+    constructor(
+        message: string,           // The error message
+        token?: Token | ParseNode, // An object providing position information
+    ) {
         let error = "KaTeX parse error: " + message;
         let start;
-        let end;
 
-        if (token && token.lexer && token.start <= token.end) {
+        const loc = token && token.loc;
+        if (loc && loc.start <= loc.end) {
             // If we have the input and a position, make the error a bit fancier
 
             // Get the input
-            const input = token.lexer.input;
+            const input = loc.lexer.input;
 
             // Prepend some information
-            start = token.start;
-            end = token.end;
+            start = loc.start;
+            const end = loc.end;
             if (start === input.length) {
                 error += " at end of input: ";
             } else {
@@ -47,20 +54,22 @@ class ParseError {
                 right = input.slice(end);
             }
             error += left + underlined + right;
+
         }
 
         // Some hackery to make ParseError a prototype of Error
         // See http://stackoverflow.com/a/8460753
         const self = new Error(error);
         self.name = "ParseError";
+        // $FlowFixMe
         self.__proto__ = ParseError.prototype;
-
+        // $FlowFixMe
         self.position = start;
         return self;
     }
 }
 
-// More hackery
+// $FlowFixMe More hackery
 ParseError.prototype.__proto__ = Error.prototype;
 
-module.exports = ParseError;
+export default ParseError;

@@ -140,6 +140,29 @@ describe("Parser:", function() {
                 "Can't use function '\\sqrt' in text mode" +
                 " at position 7: \\text{\\̲s̲q̲r̲t̲2 is irrational…");
         });
+        it("rejects text-mode-only functions in math mode", function() {
+            expect("\\'echec").toFailWithParseError(
+                "Can't use function '\\'' in math mode" +
+                " at position 1: \\̲'̲echec");
+        });
+    });
+
+    describe("#parseArguments", function() {
+        it("complains about missing argument at end of input", function() {
+            expect("2\\sqrt").toFailWithParseError(
+                   "Expected group after '\\sqrt' at end of input: 2\\sqrt");
+        });
+        it("complains about missing argument at end of group", function() {
+            expect("1^{2\\sqrt}").toFailWithParseError(
+                   "Expected group after '\\sqrt'" +
+                   " at position 10: 1^{2\\sqrt}̲");
+        });
+        it("complains about functions as arguments to others", function() {
+            // TODO: The position looks pretty wrong here
+            expect("\\sqrt\\over2").toFailWithParseError(
+                   "Got function '\\over' as argument to '\\sqrt'" +
+                   " at position 6: \\sqrt\\̲o̲v̲e̲r̲2");
+        });
     });
 
     describe("#parseArguments", function() {
@@ -160,21 +183,14 @@ describe("Parser:", function() {
         });
     });
 
-    describe("#parseArguments", function() {
-        it("complains about missing argument at end of input", function() {
-            expect("2\\sqrt").toFailWithParseError(
-                   "Expected group after '\\sqrt' at end of input: 2\\sqrt");
+    describe("#verb", function() {
+        it("complains about mismatched \\verb with end of string", function() {
+            expect("\\verb|hello").toFailWithParseError(
+                "\\verb ended by end of line instead of matching delimiter");
         });
-        it("complains about missing argument at end of group", function() {
-            expect("1^{2\\sqrt}").toFailWithParseError(
-                   "Expected group after '\\sqrt'" +
-                   " at position 10: 1^{2\\sqrt}̲");
-        });
-        it("complains about functions as arguments to others", function() {
-            // TODO: The position looks pretty wrong here
-            expect("\\sqrt\\over2").toFailWithParseError(
-                   "Got function '\\over' as argument to '\\sqrt'" +
-                   " at position 6: \\sqrt\\̲o̲v̲e̲r̲2");
+        it("complains about mismatched \\verb with end of line", function() {
+            expect("\\verb|hello\nworld|").toFailWithParseError(
+                "\\verb ended by end of line instead of matching delimiter");
         });
     });
 
@@ -281,7 +297,7 @@ describe("environments.js:", function() {
         });
         it("rejects incorrectly scoped \\end", function() {
             expect("{\\begin{matrix}1}\\end{matrix}").toFailWithParseError(
-                   "Expected & or \\\\\ or \\end at position 17:" +
+                   "Expected & or \\\\ or \\end at position 17:" +
                    " …\\begin{matrix}1}̲\\end{matrix}");
         });
     });

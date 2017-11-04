@@ -1,11 +1,11 @@
 {
-  "name": "katex",
-  "version": "0.10.0-pre",
+  "name": "@gerhobbelt/katex",
+  "version": "0.10.0-pre.2",
   "description": "Fast math typesetting for the web.",
   "main": "dist/katex.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/Khan/KaTeX.git"
+    "url": "git://github.com/GerHobbelt/KaTeX.git"
   },
   "files": [
     "katex.js",
@@ -68,7 +68,8 @@
     "build-css": "lessc --clean-css static/katex.less build/katex.css",
     "prestart": "npm run build-css && npm run copy",
     "start": "check-dependencies && node webpackDevServer.js",
-    "prepublishOnly": "make NIS= dist"
+    "prepublishOnly": "make NIS= dist",
+    "pub": "npm publish --access public"
   },
   "pre-commit": [
     "lint"

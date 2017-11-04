@@ -2627,6 +2627,10 @@ describe("Unicode", function() {
     it("should parse negated relations", function() {
         expect("∉∤∦≁≆≠≨≩≮≯≰≱⊀⊁⊈⊉⊊⊋⊬⊭⊮⊯⋠⋡⋦⋧⋨⋩⋬⋭⪇⪈⪉⪊⪵⪶⪹⪺⫋⫌").toParse();
     });
+
+    it("should parse binary operators", function() {
+        expect("±×÷∓∔∧∨∩∪≀⊎⊓⊔⊕⊖⊗⊘⊙⊚⊛⊝⊞⊟⊠⊡⊺⊻⊼⋇⋉⋊⋋⋌⋎⋏⋒⋓⩞").toParse();
+    });
 });
 
 describe("The maxSize setting", function() {

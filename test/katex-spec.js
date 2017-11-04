@@ -2593,6 +2593,16 @@ describe("A macro expander", function() {
         expect("X \\implies Y").toBuild();
         expect("X \\impliedby Y").toBuild();
     });
+
+    it("should expand \\limsup as expected", () => {
+        expect("\\limsup")
+            .toParseLike("\\mathop{\\operatorname{lim\\,sup}}\\limits");
+    });
+
+    it("should expand \\liminf as expected", () => {
+        expect("\\liminf")
+            .toParseLike("\\mathop{\\operatorname{lim\\,inf}}\\limits");
+    });
 });
 
 describe("A parser taking String objects", function() {

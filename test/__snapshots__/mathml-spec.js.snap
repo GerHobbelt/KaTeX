@@ -74,6 +74,76 @@ exports[`A MathML builder should make prime operators into <mo> nodes 1`] = `
 
 `;
 
+exports[`A MathML builder should output \\limsup_{x \\rightarrow \\infty} correctly 1`] = `
+
+<math>
+  <semantics>
+    <mrow>
+      <msub>
+        <mo>
+          <mi mathvariant="normal">
+            lim sup
+          </mi>
+          <mo>
+            &amp;ApplyFunction;
+          </mo>
+        </mo>
+        <mrow>
+          <mi>
+            x
+          </mi>
+          <mo>
+            →
+          </mo>
+          <mi mathvariant="normal">
+            ∞
+          </mi>
+        </mrow>
+      </msub>
+    </mrow>
+    <annotation encoding="application/x-tex">
+      \\limsup_{x \\rightarrow \\infty}
+    </annotation>
+  </semantics>
+</math>
+
+`;
+
+exports[`A MathML builder should output \\limsup_{x \\rightarrow \\infty} in displaymode correctly 1`] = `
+
+<math>
+  <semantics>
+    <mrow>
+      <munder>
+        <mo>
+          <mi mathvariant="normal">
+            lim sup
+          </mi>
+          <mo>
+            &amp;ApplyFunction;
+          </mo>
+        </mo>
+        <mrow>
+          <mi>
+            x
+          </mi>
+          <mo>
+            →
+          </mo>
+          <mi mathvariant="normal">
+            ∞
+          </mi>
+        </mrow>
+      </munder>
+    </mrow>
+    <annotation encoding="application/x-tex">
+      \\limsup_{x \\rightarrow \\infty}
+    </annotation>
+  </semantics>
+</math>
+
+`;
+
 exports[`A MathML builder should use <menclose> for colorbox 1`] = `
 
 <math>

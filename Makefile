@@ -1,6 +1,6 @@
 .PHONY: build dist lint setup copy serve clean metrics test coverage zip contrib flow superclean prep
 
-build: test build/katex.min.js build/katex.min.css contrib zip compress
+build: test build/katex.min.js build/katex.min.css contrib compress
 
 ifeq ($(KATEX_DIST),skip)
 

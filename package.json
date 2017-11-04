@@ -28,6 +28,7 @@
     "browserify": "14.5.0",
     "check-dependencies": "1.1.0",
     "clean-css": "4.1.9",
+    "clean-css-cli": "4.1.10",
     "eslint": "4.10.0",
     "eslint-plugin-flowtype": "2.39.1",
     "express": "4.16.2",
@@ -56,6 +57,7 @@
   "bin": "cli.js",
   "scripts": {
     "lint": "eslint katex.js server.js cli.js src test contrib dockers",
+    "lint-fix": "eslint --fix katex.js server.js cli.js src test contrib dockers",
     "flow": "flow",
     "jest": "jest",
     "coverage": "jest --coverage",

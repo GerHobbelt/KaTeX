@@ -1,41 +1,42 @@
+/* eslint no-constant-condition:0 */
 var fontMetrics = require("./fontMetrics");
 var parseData = require("./parseData");
 var ParseError = require("./ParseError");
 
 var ParseNode = parseData.ParseNode;
-var ParseResult = parseData.ParseResult;
 
 /**
  * Parse the body of the environment, with rows delimited by \\ and
  * columns delimited by &, and create a nested list in row-major order
  * with one group per cell.
  */
-function parseArray(parser, pos, result) {
-    var row = [], body = [row], rowGaps = [];
+function parseArray(parser, result) {
+    var row = [];
+    var body = [row];
+    var rowGaps = [];
     while (true) {
-        var cell = parser.parseExpression(pos, false, null);
-        row.push(new ParseNode("ordgroup", cell.result, parser.mode));
-        pos = cell.position;
-        var next = cell.peek.text;
+        var cell = parser.parseExpression(false, null);
+        row.push(new ParseNode("ordgroup", cell, parser.mode));
+        var next = parser.nextToken.text;
         if (next === "&") {
-            pos = cell.peek.position;
+            parser.consume();
         } else if (next === "\\end") {
             break;
         } else if (next === "\\\\" || next === "\\cr") {
-            var cr = parser.parseFunction(pos);
-            rowGaps.push(cr.result.value.size);
-            pos = cr.position;
+            var cr = parser.parseFunction();
+            rowGaps.push(cr.value.size);
             row = [];
             body.push(row);
         } else {
+            // TODO: Clean up the following hack once #385 got merged
+            var pos = Math.min(parser.pos + 1, parser.lexer._input.length);
             throw new ParseError("Expected & or \\\\ or \\end",
-                                 parser.lexer, cell.peek.position);
+                                 parser.lexer, pos);
         }
     }
     result.body = body;
     result.rowGaps = rowGaps;
-    return new ParseResult(
-        new ParseNode(result.type, result, parser.mode), pos);
+    return new ParseNode(result.type, result, parser.mode);
 }
 
 /*
@@ -55,7 +56,6 @@ function parseArray(parser, pos, result) {
  *  - context: information and references provided by the parser
  *  - args: an array of arguments passed to \begin{name}
  * The context contains the following properties:
- *  - pos: the current position of the parser.
  *  - envName: the name of the environment, one of the listed names.
  *  - parser: the parser object
  *  - lexer: the lexer object
@@ -77,7 +77,7 @@ function defineEnvironment(names, props, handler) {
         greediness: 1,
         allowedInText: !!props.allowedInText,
         numOptionalArgs: props.numOptionalArgs || 0,
-        handler: handler
+        handler: handler,
     };
     for (var i = 0; i < names.length; ++i) {
         module.exports[names[i]] = data;
@@ -87,35 +87,33 @@ function defineEnvironment(names, props, handler) {
 // Arrays are part of LaTeX, defined in lttab.dtx so its documentation
 // is part of the source2e.pdf file of LaTeX2e source documentation.
 defineEnvironment("array", {
-    numArgs: 1
+    numArgs: 1,
 }, function(context, args) {
     var colalign = args[0];
-    var lexer = context.lexer;
-    var positions = context.positions;
     colalign = colalign.value.map ? colalign.value : [colalign];
     var cols = colalign.map(function(node) {
         var ca = node.value;
         if ("lcr".indexOf(ca) !== -1) {
             return {
                 type: "align",
-                align: ca
+                align: ca,
             };
         } else if (ca === "|") {
             return {
                 type: "separator",
-                separator: "|"
+                separator: "|",
             };
         }
         throw new ParseError(
             "Unknown column alignment: " + node.value,
-            lexer, positions[1]);
+            context.lexer, context.positions[1]);
     });
     var res = {
         type: "array",
         cols: cols,
-        hskipBeforeAndAfter: true // \@preamble in lttab.dtx
+        hskipBeforeAndAfter: true, // \@preamble in lttab.dtx
     };
-    res = parseArray(context.parser, context.pos, res);
+    res = parseArray(context.parser, res);
     return res;
 });
 
@@ -127,7 +125,7 @@ defineEnvironment([
     "bmatrix",
     "Bmatrix",
     "vmatrix",
-    "Vmatrix"
+    "Vmatrix",
 ], {
 }, function(context) {
     var delimiters = {
@@ -136,18 +134,18 @@ defineEnvironment([
         "bmatrix": ["[", "]"],
         "Bmatrix": ["\\{", "\\}"],
         "vmatrix": ["|", "|"],
-        "Vmatrix": ["\\Vert", "\\Vert"]
+        "Vmatrix": ["\\Vert", "\\Vert"],
     }[context.envName];
     var res = {
         type: "array",
-        hskipBeforeAndAfter: false // \hskip -\arraycolsep in amsmath
+        hskipBeforeAndAfter: false, // \hskip -\arraycolsep in amsmath
     };
-    res = parseArray(context.parser, context.pos, res);
+    res = parseArray(context.parser, res);
     if (delimiters) {
-        res.result = new ParseNode("leftright", {
-            body: [res.result],
+        res = new ParseNode("leftright", {
+            body: [res],
             left: delimiters[0],
-            right: delimiters[1]
+            right: delimiters[1],
         }, context.mode);
     }
     return res;
@@ -165,19 +163,59 @@ defineEnvironment("cases", {
             type: "align",
             align: "l",
             pregap: 0,
-            postgap: fontMetrics.metrics.quad
+            postgap: fontMetrics.metrics.quad,
         }, {
             type: "align",
             align: "l",
             pregap: 0,
-            postgap: 0
-        }]
+            postgap: 0,
+        }],
     };
-    res = parseArray(context.parser, context.pos, res);
-    res.result = new ParseNode("leftright", {
-        body: [res.result],
+    res = parseArray(context.parser, res);
+    res = new ParseNode("leftright", {
+        body: [res],
         left: "\\{",
-        right: "."
+        right: ".",
     }, context.mode);
+    return res;
+});
+
+// An aligned environment is like the align* environment
+// except it operates within math mode.
+// Note that we assume \nomallineskiplimit to be zero,
+// so that \strut@ is the same as \strut.
+defineEnvironment("aligned", {
+}, function(context) {
+    var res = {
+        type: "array",
+        cols: [],
+    };
+    res = parseArray(context.parser, res);
+    var emptyGroup = new ParseNode("ordgroup", [], context.mode);
+    var numCols = 0;
+    res.value.body.forEach(function(row) {
+        var i;
+        for (i = 1; i < row.length; i += 2) {
+            row[i].value.unshift(emptyGroup);
+        }
+        if (numCols < row.length) {
+            numCols = row.length;
+        }
+    });
+    for (var i = 0; i < numCols; ++i) {
+        var align = "r";
+        var pregap = 0;
+        if (i % 2 === 1) {
+            align = "l";
+        } else if (i > 0) {
+            pregap = 2; // one \qquad between columns
+        }
+        res.value.cols[i] = {
+            type: "align",
+            align: align,
+            pregap: pregap,
+            postgap: 0,
+        };
+    }
     return res;
 });

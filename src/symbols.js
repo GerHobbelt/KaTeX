@@ -693,9 +693,9 @@ for (let i = 0; i < textSymbols.length; i++) {
 }
 
 // All of these are textords in text mode
-var extendedLatinBase = "äåöøÄÅÖ";
-for (i = 0; i < extendedLatinBase.length; i++) {
-    ch = extendedLatinBase.charAt(i);
+const extendedLatinBase = "äåöøÄÅÖ";
+for (let i = 0; i < extendedLatinBase.length; i++) {
+    const ch = extendedLatinBase.charAt(i);
     defineSymbol(math, main, mathord, ch, ch);
     defineSymbol(text, main, textord, ch, ch);
 }
@@ -709,15 +709,15 @@ for (let i = 0; i < letters.length; i++) {
 }
 
 
-var lowercaseGreekLetters = "αβγδεϵζηθϑικλμνξοπϖρϱςστυφϕχψω";
-for (i = 0; i < letters.length; i++) {
-    ch = lowercaseGreekLetters.charAt(i);
+const lowercaseGreekLetters = "αβγδεϵζηθϑικλμνξοπϖρϱςστυφϕχψω";
+for (let i = 0; i < letters.length; i++) {
+    const ch = lowercaseGreekLetters.charAt(i);
     defineSymbol(math, main, mathord, ch, ch);
 }
 
-var uppercaseGreekLetters = "ΓΔΘΞΠΣΦΨΩ";
-for (i = 0; i < letters.length; i++) {
-    ch = uppercaseGreekLetters.charAt(i);
+const uppercaseGreekLetters = "ΓΔΘΞΠΣΦΨΩ";
+for (let i = 0; i < letters.length; i++) {
+    const ch = uppercaseGreekLetters.charAt(i);
     defineSymbol(math, main, textord, ch, ch);
 }
 
